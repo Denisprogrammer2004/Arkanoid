@@ -3,16 +3,17 @@ import math
 import os
 import random
 
+# размер игрового экрана
 size = width, height = 600, 600
 
 #класс для отображения и управления платформой
 class Platform(pygame.sprite.Sprite):
     def __init__(self, pos=int(width * 0.5)):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((50, 5))
+        self.image = pygame.Surface((50, 10))
         self.image.fill(pygame.Color('gray'))
         self.image.set_colorkey(pygame.Color('black'))
-        self.rect = pygame.Rect((pos, int(height * 0.75)), (50, 5))
+        self.rect = pygame.Rect((pos, int(height * 0.9)), (50, 10))
         self.mask = pygame.mask.from_surface(self.image)
 
     #возвращает позицию верхнего левого угла платформы
@@ -95,7 +96,8 @@ class Ball(pygame.sprite.Sprite):
 
     def hit_platform(self, pltfrm):
         if (pygame.sprite.collide_rect(self, pltfrm)):
-            if pygame.sprite.collide_mask(self, pltfrm) is None:
+            coll = pygame.sprite.collide_mask(self, pltfrm)
+            if coll is None:
                 return False
             else:
                 return True
@@ -148,25 +150,28 @@ class Brick(pygame.sprite.Sprite):
             self.remaining_hits -= 1
         return self.remaining_hits
 
+
 #функция, создающая уровень игры
 def level_one_create_layout(lst_gray, lst_colored):
     #зануляем списки кирпичиков
     lst_gray.empty() #серые кирпичи хранятся отдельно
     lst_colored.empty()
     #расставляем в цикле, выбирая цвет рандомно
-    for i in range(10):
+    for i in range(12):
         for j in range(10):
-            rndm = random.choice(list(colors.keys()))
-            brick = Brick(rndm)
-            brick.set_pos((1.5 * i * brick.get_width() + 10, 2 * j * brick.get_height() + 10))
-            if rndm == 0:
-                lst_gray.add(brick)
-            else:
-                lst_colored.add(brick)
+            #rndm = random.choice(list(colors.keys()))
+            brick = Brick(1)
+            brick.set_pos((1.5 * i * brick.get_width() + 20, 1.5 * j * brick.get_height() + 20))
+            lst_colored.add(brick)
+    # расставляем в цикле серые
+    for i in range(6):
+        brick = Brick(0)
+        brick.set_pos((1.5 * 2 * i * brick.get_width() + 20, 1.5 * 10 * brick.get_height() + 20))
+        lst_gray.add(brick)
 
 #вычисляет отраженный угол в зависимости от начального угла и оси отражения
 def bounce_angle(angle, axe):
-    if axe is True: #ось у
+    if axe is True: #ось y
         if 0 <= angle <= 0.5 * math.pi:
             angle = math.pi - angle
         elif 0.5 * math.pi <= angle <= math.pi:
@@ -176,7 +181,7 @@ def bounce_angle(angle, axe):
         elif 1.5 * math.pi <= angle <= 2 * math.pi:
             angle = 3 * math.pi - angle
 
-    else: #ось х
+    else: #ось x
         if 0 <= angle <= 0.5 * math.pi:
             angle = 2 * math.pi - angle
         elif 0.5 * math.pi <= angle <= math.pi:
@@ -187,10 +192,10 @@ def bounce_angle(angle, axe):
             angle = 2 * math.pi - angle
 
 
-    if angle > 2 * math.pi:
+    while (angle > 2 * math.pi):
         angle -= 2 * math.pi
-    elif angle < -2 * math.pi:
-        angle = 2 * math.pi - angle
+    while angle < -2 * math.pi:
+        angle += 2 * math.pi
     if angle < 0:
         angle = 2 * math.pi + angle
     new_angle = angle
@@ -216,25 +221,34 @@ def draw_count(scrn, count, rect):
     scrn.blit(text, rect.topleft)
 
 #выставить правильную позицию и угол мяча в зависимости от грани, с которой он столкнулся
-def reflect_ball_from_rect(rect, ball):
-    bottomline = pygame.Rect(rect.bottomleft, rect.bottomright)
-    topline = pygame.Rect(rect.topleft, rect.topright)
-    leftline = pygame.Rect(rect.topleft, rect.bottomleft)
-    rightline = pygame.Rect(rect.topright, rect.bottomright)
+def reflect_ball_from_object(obj, ball):
+    x, y = pygame.sprite.collide_mask(obj, ball)
+    x_offset = ball.rect.left - obj.rect.left
+    y_offset = ball.rect.top - obj.rect.top
+    x1, y1 = x_offset, y_offset
+    dx = obj.mask.overlap_area(ball.mask, (x1 + 1, y1)) - obj.mask.overlap_area(ball.mask, (x1 - 1, y1))
+    dy = obj.mask.overlap_area(ball.mask, (x1, y1 + 1)) - obj.mask.overlap_area(ball.mask, (x1, y1 - 1))
     new_angle = 0
-    if bottomline.colliderect(ball.rect):
+    if dx == 0:
         new_angle = bounce_angle(ball.get_angle(), False)
-        ball.set_pos((ball.get_pos()[0], bottomline.top))
-    elif topline.colliderect(ball.rect):
-        new_angle = bounce_angle(ball.get_angle(), False)
-        ball.set_pos((ball.get_pos()[0], topline.top - ball.rect.height))
-    elif leftline.colliderect(ball.rect):
+        if (dy > 0):
+            ball.set_pos((ball.get_pos()[0], obj.rect.top - ball.rect.height))
+        else:
+            ball.set_pos((ball.get_pos()[0], obj.rect.bottom))
+    elif dy == 0:
         new_angle = bounce_angle(ball.get_angle(), True)
-        ball.set_pos((leftline.left - ball.rect.width, ball.get_pos()[1]))
-    elif rightline.colliderect(ball.rect):
-        new_angle = bounce_angle(ball.get_angle(), True)
-        ball.set_pos((rightline.left, ball.get_pos()[1]))
+        if (dx > 0):
+            ball.set_pos((obj.rect.left - ball.rect.width, ball.get_pos()[1]))
+        else:
+            ball.set_pos((obj.rect.right, ball.get_pos()[1]))
+    else:
+        angle = ball.get_angle()
+        if angle < math.pi:
+            new_angle = angle + math.pi
+        else:
+            new_angle = 2 * math.pi - angle
     ball.set_angle(new_angle)
+
 
 screen = pygame.display.set_mode(size)
 running = True
@@ -276,20 +290,20 @@ while running:
             brcks = ball.hit_bricks(gray_bricks)
             if len(brcks) > 0:
                 last_brick = brcks[len(brcks) - 1]
-                reflect_ball_from_rect(last_brick.rect, ball)
+                #ball.set_angle(ball.get_angle() + random.random() * math.pi / 20)
+                reflect_ball_from_object(last_brick, ball)
             brcks = ball.hit_bricks(colored_bricks)
             if len(brcks) > 0:
                 last_brick = brcks[len(brcks) - 1]
-                reflect_ball_from_rect(last_brick.rect, ball)
+                reflect_ball_from_object(last_brick, ball)
                 remaining_hits = last_brick.hitted()
-                print(remaining_hits)
                 if remaining_hits == 0:
                     colored_bricks.remove(brcks)
 
 
             if ball.hit_platform(platform):
-                ball.set_angle(ball.get_angle() + random.random() * math.pi / 20)
-                reflect_ball_from_rect(platform.rect, ball)
+                ball.set_angle(ball.get_angle() + random.random() * math.pi / 30)
+                reflect_ball_from_object(platform, ball)
 
             if not ball.ball_in_the_game(): #если мяч вылетел за пределы поля
                 if count_of_lives > 1: #жизни остались
