@@ -11,6 +11,7 @@ class Platform(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((50, 5))
         self.image.fill(pygame.Color('gray'))
+        self.image.set_colorkey(pygame.Color('black'))
         self.rect = pygame.Rect((pos, int(height * 0.75)), (50, 5))
         self.mask = pygame.mask.from_surface(self.image)
 
@@ -93,11 +94,13 @@ class Ball(pygame.sprite.Sprite):
         #return pygame.sprite.spritecollide(self, brks, False)
 
     def hit_platform(self, pltfrm):
-        if pygame.sprite.collide_mask(self, pltfrm) is None:
-            return False
+        if (pygame.sprite.collide_rect(self, pltfrm)):
+            if pygame.sprite.collide_mask(self, pltfrm) is None:
+                return False
+            else:
+                return True
         else:
-            return True
-        #return pygame.sprite.collide_rect(self, pltfrm)
+            return False
 
     def set_pos(self, coord):
         self.position = coord
@@ -126,6 +129,7 @@ class Brick(pygame.sprite.Sprite):
         self.image = pygame.Surface((30, 10))
         self.image.fill(pygame.Color(colors[self.clr]))
         self.rect = pygame.Rect(coord, (30, 10))
+        self.image.set_colorkey(pygame.Color('black'))
         self.mask = pygame.mask.from_surface(self.image)
         self.remaining_hits = clr #атрибут, хранящий количество ударов до выбивания
 
