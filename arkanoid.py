@@ -14,13 +14,16 @@ class Platform(pygame.sprite.Sprite):
         self.rect = pygame.Rect((pos, int(height * 0.75)), (50, 5))
         self.mask = pygame.mask.from_surface(self.image)
 
+    #возвращает позицию верхнего левого угла платформы
     def get_pos(self):
         return self.rect.topleft
 
+    #устанавливает позицию верхнего левого угла платформы
     def set_pos(self, pos):
         if pos + self.rect.width <= width:
             self.rect.left = pos
 
+    #рисует платформу на экране
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
@@ -31,14 +34,15 @@ class Ball(pygame.sprite.Sprite):
         self.image = pygame.Surface((14, 14))
         self.image.set_colorkey(pygame.Color('black'))
         pygame.draw.circle(self.image, pygame.Color('red'), (7, 7), 7, 0)
-        self.velocity = 100
+        self.velocity = 100 #задает скорость мяча
         self.rect = pygame.Rect(coord, (14, 14))
         self.mask = pygame.mask.from_surface(self.image)
         self.angle = angle
         self.clock = pygame.time.Clock()
         self.position = coord
-        self.out_of_the_game = False
+        self.out_of_the_game = False #флаг, определяющий находится ли мяч в игре
 
+    #определяет находится ли мяч в игре
     def ball_in_the_game(self):
         return not self.out_of_the_game
 
@@ -51,6 +55,7 @@ class Ball(pygame.sprite.Sprite):
     def set_speed(self, velocity):
         self.velocity = velocity
 
+    #реализует логику движения шара
     def move(self):
         delta = int(self.velocity / 30)
         pos_x = self.position[0]
@@ -108,11 +113,11 @@ class Ball(pygame.sprite.Sprite):
         return self.angle
 
 
-colors = {0: 'gray',
-          1: 'blue',
-          2: 'red',
-          3: 'green'}
-color_keys = [0, 1, 2, 3]
+#словарь для цветов кирпичей
+colors = {0: 'gray', #серые кирпичи не выбиваются
+          1: 'blue', #синие кирпичи выбиваются с 1 раза
+          2: 'red', #красные кирпичи выбиваются с 2 раза
+          3: 'green'} #зеленые кирпичи выбиваются с 3 раза
 #класс для отображения "кирпичиков"
 class Brick(pygame.sprite.Sprite):
     def __init__(self, clr, coord=(0, 0)):
@@ -122,7 +127,7 @@ class Brick(pygame.sprite.Sprite):
         self.image.fill(pygame.Color(colors[self.clr]))
         self.rect = pygame.Rect(coord, (30, 10))
         self.mask = pygame.mask.from_surface(self.image)
-        self.remaining_hits = clr
+        self.remaining_hits = clr #атрибут, хранящий количество ударов до выбивания
 
     def set_pos(self, coord):
         self.rect.topleft = coord
@@ -133,18 +138,21 @@ class Brick(pygame.sprite.Sprite):
     def get_height(self):
         return self.rect.height
 
+    #уменьшает количество ударов до выбивания и возвращает его наружу
     def hitted(self):
         if self.remaining_hits > 0:
             self.remaining_hits -= 1
         return self.remaining_hits
 
-
+#функция, создающая уровень игры
 def level_one_create_layout(lst_gray, lst_colored):
-    lst_gray.empty()
+    #зануляем списки кирпичиков
+    lst_gray.empty() #серые кирпичи хранятся отдельно
     lst_colored.empty()
+    #расставляем в цикле, выбирая цвет рандомно
     for i in range(10):
         for j in range(10):
-            rndm = random.choice(color_keys)
+            rndm = random.choice(list(colors.keys()))
             brick = Brick(rndm)
             brick.set_pos((1.5 * i * brick.get_width() + 10, 2 * j * brick.get_height() + 10))
             if rndm == 0:
@@ -152,13 +160,9 @@ def level_one_create_layout(lst_gray, lst_colored):
             else:
                 lst_colored.add(brick)
 
-
-def clear_callback(surf, rect):
-    color = 0, 0, 0
-    surf.fill(color, rect)
-
+#вычисляет отраженный угол в зависимости от начального угла и оси отражения
 def bounce_angle(angle, axe):
-    if axe is True:
+    if axe is True: #ось у
         if 0 <= angle <= 0.5 * math.pi:
             angle = math.pi - angle
         elif 0.5 * math.pi <= angle <= math.pi:
@@ -168,7 +172,7 @@ def bounce_angle(angle, axe):
         elif 1.5 * math.pi <= angle <= 2 * math.pi:
             angle = 3 * math.pi - angle
 
-    else:
+    else: #ось х
         if 0 <= angle <= 0.5 * math.pi:
             angle = 2 * math.pi - angle
         elif 0.5 * math.pi <= angle <= math.pi:
@@ -188,6 +192,7 @@ def bounce_angle(angle, axe):
     new_angle = angle
     return new_angle
 
+#создает surface из файла. Файлы должны быть в папке Data.
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     image = pygame.image.load(fullname).convert()
@@ -199,12 +204,14 @@ def load_image(name, colorkey=None):
         image = image.convert_alpha()
     return image
 
+#рисует счетчик оставшихся жизней
 def draw_count(scrn, count, rect):
     pygame.font.init()
     font = pygame.font.Font(None, 50)
     text = font.render(str(count), 1, pygame.Color('red'))
     scrn.blit(text, rect.topleft)
 
+#выставить правильную позицию и угол мяча в зависимости от грани, с которой он столкнулся
 def reflect_ball_from_rect(rect, ball):
     bottomline = pygame.Rect(rect.bottomleft, rect.bottomright)
     topline = pygame.Rect(rect.topleft, rect.topright)
@@ -239,8 +246,8 @@ ball.set_speed(200)
 level_one_create_layout(gray_bricks, colored_bricks)
 #игровой цикл
 while running:
-    if not game_is_over:
-        if len(colored_bricks) == 0:
+    if not game_is_over: #ветка для логики продолжающейся игры
+        if len(colored_bricks) == 0: #проверяем остались ли цветные кирпичи, если нет, то подготавливаем заставку победы
             game_is_over = True
             image = load_image('win.jpg')
             velocity = 200
@@ -255,12 +262,13 @@ while running:
             screen.blit(image, (position, 0))
             pygame.display.flip()
             clock.tick(30)
-        else:
+        else: #ветка, когда остались цветные кирпичи, продолжаем выбивать
             flag = True
             background = load_image('background.jpg')
             screen.blit(background, (0, 0))
             gray_bricks.draw(screen)
             colored_bricks.draw(screen)
+            #определяем попали ли в какой-либо кирпич. Если серый, то не выбиваем.
             brcks = ball.hit_bricks(gray_bricks)
             if len(brcks) > 0:
                 last_brick = brcks[len(brcks) - 1]
@@ -279,13 +287,13 @@ while running:
                 ball.set_angle(ball.get_angle() + random.random() * math.pi / 20)
                 reflect_ball_from_rect(platform.rect, ball)
 
-            if not ball.ball_in_the_game():
-                if count_of_lives > 1:
+            if not ball.ball_in_the_game(): #если мяч вылетел за пределы поля
+                if count_of_lives > 1: #жизни остались
                     count_of_lives -= 1
                     ball.return_ball_in_the_game()
                     ball.set_pos((int(width * 0.5), int(height * 0.5)))
                     ball.set_angle(math.pi / 6)
-                else:
+                else: #игра проиграна, подготовка к отрисовки заставки
                     game_is_over = True
                     image = load_image('my_gameover.png')
                     velocity = 200
@@ -296,7 +304,7 @@ while running:
             platform.draw(screen)
             draw_count(screen, count_of_lives, pygame.Rect(width - 50, height - 50, 50, 50))
 
-    else:
+    else: #отрисовка анимированной заставки победы или проигрыша
         screen.fill(pygame.Color('blue'))
         delta_x = int(velocity / 30)
         if (position + delta_x + image.get_width()) <= width:
@@ -307,6 +315,7 @@ while running:
         pygame.display.flip()
         clock.tick(30)
 
+    #обработка событий: передвижение платформы при помощи левой кнопки мыши, ее перетаскивания с нажатой кнопкой, перезапуск игры и выход из нее
     for event in pygame.event.get():
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
@@ -331,5 +340,4 @@ while running:
                     running = False
         elif event.type == pygame.QUIT:
             running = False
-
     pygame.display.flip()
