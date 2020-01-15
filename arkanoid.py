@@ -156,21 +156,35 @@ def level_one_create_layout(lst_gray, lst_colored):
     #зануляем списки кирпичиков
     lst_gray.empty() #серые кирпичи хранятся отдельно
     lst_colored.empty()
+    ball.set_speed(250)
     #расставляем в цикле, выбирая цвет рандомно
-    for i in range(0):
-        for j in range(0):
+    for i in range(12):
+        for j in range(10):
             #rndm = random.choice(list(colors.keys()))
             brick = Brick(1)
             brick.set_pos((1.5 * i * brick.get_width() + 20, 1.5 * j * brick.get_height() + 20))
             lst_colored.add(brick)
+
+def level_two_create_layout(lst_gray, lst_colored):
+    #зануляем списки кирпичиков
+    lst_gray.empty() #серые кирпичи хранятся отдельно
+    lst_colored.empty()
+    #расставляем в цикле, выбирая цвет рандомно
+    for i in range(12):
+        for j in range(10):
+            #rndm = random.choice(list(colors.keys())[1:])
+            brick = Brick(1)
+            brick.set_pos((1.5 * i * brick.get_width() + 20, 1.5 * j * brick.get_height() + 20))
+            lst_colored.add(brick)
     # расставляем в цикле серые
-    for i in range(6):
+    for i in range(1):
         brick = Brick(0)
         brick.set_pos((1.5 * 2 * i * brick.get_width() + 20, 1.5 * 10 * brick.get_height() + 20))
         lst_gray.add(brick)
+    ball.set_speed(280)
 
 #функция, создающая уровень игры
-def level_two_create_layout(lst_gray, lst_colored):
+def level_three_create_layout(lst_gray, lst_colored):
     #зануляем списки кирпичиков
     lst_gray.empty() #серые кирпичи хранятся отдельно
     lst_colored.empty()
@@ -186,7 +200,8 @@ def level_two_create_layout(lst_gray, lst_colored):
         brick = Brick(0)
         brick.set_pos((1.5 * 2 * i * brick.get_width() + 20, 1.5 * 10 * brick.get_height() + 20))
         lst_gray.add(brick)
-    ball.set_speed(250)
+    ball.set_speed(300)
+
 
 #вычисляет отраженный угол в зависимости от начального угла и оси отражения
 def bounce_angle(angle, axe):
@@ -280,6 +295,8 @@ gray_bricks = pygame.sprite.Group()
 colored_bricks = pygame.sprite.Group()
 ball = Ball(angle=(math.pi/6 + random.random() * math.pi / 2))
 ball.set_speed(200)
+lvl_two = False
+lvl_three = False
 level_one_create_layout(gray_bricks, colored_bricks)
 #игровой цикл
 while running:
@@ -380,10 +397,18 @@ while running:
                         game_is_over = False
                         count_of_lives = 3
                         plat_move = False
-                        level_two_create_layout(gray_bricks, colored_bricks)
-                        ball.return_ball_in_the_game()
-                        ball.set_pos((int(width * 0.5), int(height * 0.5)))
-                        ball.set_angle(math.pi / 6 + random.random() * math.pi / 2)
+                        if lvl_two is False:
+                            level_two_create_layout(gray_bricks, colored_bricks)
+                            ball.return_ball_in_the_game()
+                            ball.set_pos((int(width * 0.5), int(height * 0.5)))
+                            ball.set_angle(math.pi / 6 + random.random() * math.pi / 2)
+                            lvl_two = True
+                        elif lvl_three is False:
+                            level_three_create_layout(gray_bricks, colored_bricks)
+                            ball.return_ball_in_the_game()
+                            ball.set_pos((int(width * 0.5), int(height * 0.5)))
+                            ball.set_angle(math.pi / 6 + random.random() * math.pi / 2)
+                            lvl_three = True
         elif event.type == pygame.QUIT:
             running = False
     pygame.display.flip()
