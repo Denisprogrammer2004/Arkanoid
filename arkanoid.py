@@ -177,7 +177,7 @@ def level_two_create_layout(lst_gray, lst_colored):
             brick.set_pos((1.5 * i * brick.get_width() + 20, 1.5 * j * brick.get_height() + 20))
             lst_colored.add(brick)
     # расставляем в цикле серые
-    for i in range(1):
+    for i in range(6):
         brick = Brick(0)
         brick.set_pos((1.5 * 2 * i * brick.get_width() + 20, 1.5 * 10 * brick.get_height() + 20))
         lst_gray.add(brick)
